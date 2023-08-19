@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: legacy
+    database: pfc_dbt
+    schema: public
+    tables:
+      - name: customers
+      - name: orders
+      - name: payments
