@@ -36,3 +36,7 @@ models:
     # Applies to all files under models/example/
     core:
       materialized: table
+    legacy:
+      materialized: table
+    audit:
+      materialized: view
