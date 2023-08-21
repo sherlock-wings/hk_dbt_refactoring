@@ -25,16 +25,6 @@ paid_orders as (
     left join cst using (customer_id)
 ),
 
-x_tbl as (
-    select p1.order_id,
-           sum(p2.total_amount_paid) as clv_bad 
-    from paid_orders p1
-    left join paid_orders p2 on p1.customer_id = p2.customer_id
-          and p1.order_id>=p2.order_id
-    group by 1
-    order by p1.order_id 
-),
-
 customer_orders as (
     select cst.customer_id,
            min(ord.order_placed_at) as first_order_date,
@@ -53,11 +43,13 @@ final as (
              when c.first_order_date = p.order_placed_at
              then 'new' else 'return' end
            as nvsr,
-           x.clv_bad as customer_lifetime_value,
+           sum(total_amount_paid) over(
+            partition by p.customer_id 
+            order by p.order_placed_at
+           ) as customer_lifetime_value,
            c.first_order_date as fdos    
     from paid_orders p
     left join customer_orders c using (customer_id)
-    left join x_tbl x using (order_id)
 )
 
 select * from final
