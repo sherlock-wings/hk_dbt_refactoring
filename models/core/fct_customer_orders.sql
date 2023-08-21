@@ -46,20 +46,18 @@ customer_orders as (
 ),
 
 final as (
-    select pay.*,
-           row_number() over (order by pay.order_id) as transaction_seq,
-           row_number() over (partition by customer_id order by pay.order_id) as customer_sales_seq,
-           case
-             when customer_orders.first_order_date = pay.order_placed_at
-             then 'new'
-             else 'return'
-           end as nvsr,
-           x_tbl.clv_bad as customer_lifetime_value,
-           customer_orders.first_order_date as fdos
-    from paid_orders
-    left join customer_orders using (customer_id)
-    left join x_tbl using (order_id)
-    order by customer_orders.order_id
+    select p.*,
+           row_number() over (order by p.order_id) as transaction_seq,
+           row_number() over (partition by c.customer_id order by p.order_id) as customer_sales_seq,
+           case 
+             when c.first_order_date = p.order_placed_at
+             then 'new' else 'return' end
+           as nvsr,
+           x.clv_bad as customer_lifetime_value,
+           c.first_order_date as fdos    
+    from paid_orders p
+    left join customer_orders c using (customer_id)
+    left join x_tbl x using (order_id)
 )
 
 select * from final
