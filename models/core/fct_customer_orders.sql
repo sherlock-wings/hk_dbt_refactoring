@@ -36,22 +36,24 @@ customer_orders as (
 ),
 
 final as (
-    select p.*,
-           row_number() over (order by p.order_id) as transaction_seq,
-           row_number() over (partition by c.customer_id order by p.order_id) as customer_sales_seq,
-           case 
-             when c.first_order_date = p.order_placed_at
-             then 'new' else 'return' end
-           as nvsr,
+    select *,
+           row_number() over (order by order_id) as transaction_seq,
+           row_number() over (partition by customer_id order by order_id) as customer_sales_seq,
+           case
+             when rank() over(
+                    partition by customer_id 
+                    order by order_placed_at, order_id 
+                ) = 1 then 'new order' else 'return order' end
+           as new_vs_return_order, 
            sum(total_amount_paid) over(
-            partition by p.customer_id 
-            order by p.order_placed_at
+                partition by customer_id 
+                order by order_placed_at
            ) as customer_lifetime_value,
-           c.first_order_date as fdos    
-    from paid_orders p
-    left join customer_orders c using (customer_id)
+           first_value(order_placed_at) over(
+                partition by customer_id
+                order by order_placed_at
+           ) as customer_first_order_date    
+    from paid_orders
 )
 
-select * from final
-
-
+select * from final order by order_placed_at
